@@ -15,7 +15,7 @@ int main(int argc, char **argv){
     s = socket(AF_INET, SOCK_STREAM, 0);
     bzero(&self, sizeof(self));
     self.sin_family = AF_INET;
-    self.sin_port = htons(9999);
+    self.sin_port = htons(80);
     self.sin_addr.s_addr = INADDR_ANY;
     bind(s, (struct sockaddr*)&self, sizeof(self));
     listen(s, 5);
