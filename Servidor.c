@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <pthread.h> //biblioteca de threads em c
 
 //Bibliotecas acrescentadas para cálculo do RTT ou taxa de conexão do servidor em ms
 #include <sys/socket.h>
@@ -18,6 +19,13 @@ struct Clientes_conectados{
     double velocidade_conexao;
     struct clientes_conectados *prox;
 };
+
+typedef struct {
+    int new_socket;
+} thread_arg, *ptr_thread_arg;
+
+
+void * handle_conection (void* p_client_socket);
 
 void mostraClientes(){
 
@@ -51,12 +59,16 @@ void Adiciona_cliente(char *host, double velocidade_conexao){
 
 int main(int argc, char const *argv[])
 {
-    int server_fd, new_socket, valread;
+    int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
     int status;
+    int i = NULL;
+    pthread_t threads[20000];
+    thread_arg argumentos[20000];
+
 
     // Creating socket file descriptor - AF_INET = IPv4, SOCK_STREAM = Protocolo de camada de transporte TCP
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -111,17 +123,41 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
 
-        valread = read(new_socket, buffer, 1024);
+        pthread_t t;
+        //int *pclient = malloc(sizeof(int));
+
+        //int pclient;
+
+        argumentos[i].new_socket = new_socket;
+
+        //pclient = new_socket;
+        pthread_create(&t, NULL, handle_conection, &(argumentos[i]));      
+        i++;  
+    }
+    return 0;
+}
+
+void *handle_conection (void* p_client_socket) {
+    int client_socket = *((int*)p_client_socket);
+    int valread, status;
+    char buffer[1024] = {0};
+    ptr_thread_arg targ = (ptr_thread_arg) p_client_socket;
+
+
+        //free (p_client_socket);
+        valread = read(targ->new_socket, buffer, 1024);
+        //printf("\n%i\n", );
+
+        //printf("%s\n", buffer);
 
         
 
-        printf("%s\n", buffer);
+        //mostraClientes();
+        send(targ->new_socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
+        //send(socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
+     
+        close(targ->new_socket);
 
-        mostraClientes();
-
-        send(new_socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
-
-        status = close(new_socket);
-    }
-    return 0;
+        //status = close(socket);
+        pthread_exit(0);
 }
