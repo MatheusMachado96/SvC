@@ -13,21 +13,23 @@
 
 #define PORT 8080
 
-struct Clientes_conectados{
+struct Clientes_conectados
+{
     int posicao;
     char *host;
     double velocidade_conexao;
     struct clientes_conectados *prox;
 };
 
-typedef struct {
+typedef struct
+{
     int new_socket;
 } thread_arg, *ptr_thread_arg;
 
+void *handle_conection(void *p_client_socket);
 
-void * handle_conection (void* p_client_socket);
-
-void mostraClientes(){
+void mostraClientes()
+{
 
     printf("+----------------------------------------------------------------------------------------------+\n");
     printf("|Endereço cliente|                          Velocidade de atendimento                          |\n");
@@ -35,26 +37,27 @@ void mostraClientes(){
     printf("|                |                                                                             |\n");
     printf("|                |                                                                             |\n");
     printf("+----------------------------------------------------------------------------------------------+\n");
-
 }
 
 struct Clientes_conectados *Clientes;
 
-void Adiciona_cliente(char *host, double velocidade_conexao){
+void Adiciona_cliente(char *host, double velocidade_conexao)
+{
     struct Clientes_conectados *aux;
     aux = malloc(sizeof(struct Clientes_conectados));
-    aux->host = (char*) host;
+    aux->host = (char *)host;
     aux->velocidade_conexao = velocidade_conexao;
 
-    if(Clientes == NULL){
+    if (Clientes == NULL)
+    {
         Clientes = aux;
         printf("\nGravou o primeiro cliente\n");
-    }else{
-        Clientes->prox = (struct Clientes_conectados*) aux;
-        printf("\nGravou o segundo cliente\n");
-
     }
-    
+    else
+    {
+        Clientes->prox = (struct Clientes_conectados *)aux;
+        printf("\nGravou o segundo cliente\n");
+    }
 }
 
 int main(int argc, char const *argv[])
@@ -68,7 +71,6 @@ int main(int argc, char const *argv[])
     int i = NULL;
     pthread_t threads[20000];
     thread_arg argumentos[20000];
-
 
     // Creating socket file descriptor - AF_INET = IPv4, SOCK_STREAM = Protocolo de camada de transporte TCP
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -102,11 +104,10 @@ int main(int argc, char const *argv[])
     }
 
     printf("\nAguardando conexão na porta %i...\n", PORT);
-   
+
     //Adiciona_cliente("teste1", 2000);
     //Adiciona_cliente("teste2", 3000);
     //Adiciona_cliente("teste3", 4000);
-
 
     //printf("\n%s\n", Clientes->host);
     //Clientes = Clientes->prox;
@@ -131,33 +132,74 @@ int main(int argc, char const *argv[])
         argumentos[i].new_socket = new_socket;
 
         //pclient = new_socket;
-        pthread_create(&t, NULL, handle_conection, &(argumentos[i]));      
-        i++;  
+        pthread_create(&t, NULL, handle_conection, &(argumentos[i]));
+        i++;
     }
     return 0;
 }
 
-void *handle_conection (void* p_client_socket) {
-    int client_socket = *((int*)p_client_socket);
-    int valread, status;
+void *handle_conection(void *p_client_socket)
+{
+    int client_socket = *((int *)p_client_socket);
+    int valread, status, timeout;
     char buffer[1024] = {0};
-    ptr_thread_arg targ = (ptr_thread_arg) p_client_socket;
+    FILE *arquivoHTML, *arquivoIMG;
+    ptr_thread_arg targ = (ptr_thread_arg)p_client_socket;
 
+    arquivoHTML = fopen("assets/index.html", "r");
+    char strIndex[1024];
+    fgets(strIndex, 1024, arquivoHTML);
 
-        //free (p_client_socket);
+    arquivoIMG = fopen("assets/Logo_logotipo_unipampa_cor.jpg", "rb");
+    char strImg[1024];
+    fgets(strImg, 1024, arquivoIMG);
+
+    timeout = 0;
+
+    /* get the first token */
+
+    /* walk through other tokens */
+    //token = strtok(NULL, s);
+
+    //return (0);
+
+    //free(p_client_socket);
+    //printf("\n%i\n", );
+
+    printf("%s\n", buffer);
+    printf("executou\n");
+    while (timeout < 20)
+    {
         valread = read(targ->new_socket, buffer, 1024);
-        //printf("\n%i\n", );
+        if (valread > 0)
+        {
+            //mostraClientes();
+            timeout = 0;
+            char *token1;
+            token1 = strtok(buffer, "\n");
+            if (strcmp(token1, "GET / HTTP/1.1") == 0)
+            {
+                send(targ->new_socket, strIndex, strlen(strIndex), 0);
+            }
+            else if (strcmp(token1, "GET /favicon.ico HTTP/1.1") == 0)
+            {
+                send(targ->new_socket, strImg, strlen(strImg), 0);
+            }
+        }
+        else
+        {
+            timeout++;
+            sleep(30);
+        }
+    }
+    //mostraClientes();
+    //send(targ->new_socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
+    //send(socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
 
-        //printf("%s\n", buffer);
+    close(targ->new_socket);
 
-        
-
-        //mostraClientes();
-        send(targ->new_socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
-        //send(socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
-     
-        close(targ->new_socket);
-
-        //status = close(socket);
-        pthread_exit(0);
+    fclose(arquivoHTML);
+    fclose(arquivoIMG);
+    status = close(socket);
+    pthread_exit(0);
 }
