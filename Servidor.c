@@ -166,14 +166,13 @@ void *handle_conection(void *p_client_socket)
     //free(p_client_socket);
     //printf("\n%i\n", );
 
-    printf("%s\n", buffer);
-    printf("executou\n");
+    printf("executou a thread\n");
     while (timeout < 20)
     {
         valread = read(targ->new_socket, buffer, 1024);
         if (valread > 0)
         {
-            //mostraClientes();
+            printf("%s\n", buffer);
             timeout = 0;
             char *token1;
             token1 = strtok(buffer, "\n");
