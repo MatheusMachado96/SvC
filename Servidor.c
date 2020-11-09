@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+
+#include <fcntl.h>
 #include <pthread.h> //biblioteca de threads em c
 
 //Bibliotecas acrescentadas para cálculo do RTT ou taxa de conexão do servidor em ms
@@ -146,7 +148,11 @@ void *handle_conection(void *p_client_socket)
     ptr_thread_arg targ = (ptr_thread_arg)p_client_socket;
     FILE *fp;
     char ch;
-    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+    //char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 83\n\n<html><head><title>teste</title></head><body><img src='download.png'></body></html>";
+    char imageheader[] =
+        "HTTP/1.1 200 Ok\r\n"
+        "Content-Type: image/png\r\n\r\n";
 
     //fp = fopen("download.png", "rb");
 
@@ -158,22 +164,35 @@ void *handle_conection(void *p_client_socket)
         valread = read(targ->new_socket, buffer, 1024);
 
         printf("\n%s\n", buffer);
-    
-        if(valread == 0){
+
+        if (valread == 0)
+        {
             printf("\nCliente desconectou inesperadamente!\n");
-             close(targ->new_socket);
+            close(targ->new_socket);
             pthread_exit(0);
         }
 
         //send(targ->new_socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1><img src='download.png'></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1><img src='download.png'></body></html>"), 0);
+        if (!strncmp(buffer, "GET /download.png", 17))
+        {
+            printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            // Send header first: (Note, should loop in case of partial write or EINTR)
+            write(targ->new_socket, imageheader, sizeof(imageheader) - 1);
+            // Send image content
+            fp = open("download.png", O_RDONLY);
+            int sent = sendfile(targ->new_socket, fp, NULL, 700000);
+            printf("sent: %d", sent);
+            close(fp);
+        }else{
 
         write(targ->new_socket, hello, strlen(hello));
         //*buffer = NULL;
+        }
 
         //valread = read(targ->new_socket, buffer, 1024);
 
         //send(targ->new_socket, "HTTP/1.0 200 OK\n\n", strlen("HTTP/1.0 200 OK\n\n"), 0);
-        
+
         //while(!feof(fp)){
         //  ch = getc(fp);
         //  send(targ->new_socket, ch, strlen(ch), 0);
