@@ -13,21 +13,23 @@
 
 #define PORT 8080
 
-struct Clientes_conectados{
+struct Clientes_conectados
+{
     int posicao;
     char *host;
     double velocidade_conexao;
     struct clientes_conectados *prox;
 };
 
-typedef struct {
+typedef struct
+{
     int new_socket;
 } thread_arg, *ptr_thread_arg;
 
+void *handle_conection(void *p_client_socket);
 
-void * handle_conection (void* p_client_socket);
-
-void mostraClientes(){
+void mostraClientes()
+{
 
     printf("+----------------------------------------------------------------------------------------------+\n");
     printf("|Endereço cliente|                          Velocidade de atendimento                          |\n");
@@ -35,26 +37,27 @@ void mostraClientes(){
     printf("|                |                                                                             |\n");
     printf("|                |                                                                             |\n");
     printf("+----------------------------------------------------------------------------------------------+\n");
-
 }
 
 struct Clientes_conectados *Clientes;
 
-void Adiciona_cliente(char *host, double velocidade_conexao){
+void Adiciona_cliente(char *host, double velocidade_conexao)
+{
     struct Clientes_conectados *aux;
     aux = malloc(sizeof(struct Clientes_conectados));
-    aux->host = (char*) host;
+    aux->host = (char *)host;
     aux->velocidade_conexao = velocidade_conexao;
 
-    if(Clientes == NULL){
+    if (Clientes == NULL)
+    {
         Clientes = aux;
         printf("\nGravou o primeiro cliente\n");
-    }else{
-        Clientes->prox = (struct Clientes_conectados*) aux;
-        printf("\nGravou o segundo cliente\n");
-
     }
-    
+    else
+    {
+        Clientes->prox = (struct Clientes_conectados *)aux;
+        printf("\nGravou o segundo cliente\n");
+    }
 }
 
 int main(int argc, char const *argv[])
@@ -68,7 +71,6 @@ int main(int argc, char const *argv[])
     int i = NULL;
     pthread_t threads[20000];
     thread_arg argumentos[20000];
-
 
     // Creating socket file descriptor - AF_INET = IPv4, SOCK_STREAM = Protocolo de camada de transporte TCP
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -102,11 +104,10 @@ int main(int argc, char const *argv[])
     }
 
     printf("\nAguardando conexão na porta %i...\n", PORT);
-   
+
     //Adiciona_cliente("teste1", 2000);
     //Adiciona_cliente("teste2", 3000);
     //Adiciona_cliente("teste3", 4000);
-
 
     //printf("\n%s\n", Clientes->host);
     //Clientes = Clientes->prox;
@@ -131,33 +132,60 @@ int main(int argc, char const *argv[])
         argumentos[i].new_socket = new_socket;
 
         //pclient = new_socket;
-        pthread_create(&t, NULL, handle_conection, &(argumentos[i]));      
-        i++;  
+        pthread_create(&t, NULL, handle_conection, &(argumentos[i]));
+        i++;
     }
     return 0;
 }
 
-void *handle_conection (void* p_client_socket) {
-    int client_socket = *((int*)p_client_socket);
+void *handle_conection(void *p_client_socket)
+{
+    int client_socket = *((int *)p_client_socket);
     int valread, status;
     char buffer[1024] = {0};
-    ptr_thread_arg targ = (ptr_thread_arg) p_client_socket;
+    ptr_thread_arg targ = (ptr_thread_arg)p_client_socket;
+    FILE *fp;
+    char ch;
+    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
+    //fp = fopen("download.png", "rb");
 
-        //free (p_client_socket);
+    printf("\nEntrou na thread\n");
+
+    while (1)
+    {
+
         valread = read(targ->new_socket, buffer, 1024);
-        //printf("\n%i\n", );
 
-        //printf("%s\n", buffer);
+        printf("\n%s\n", buffer);
+    
+        if(valread == 0){
+            printf("\nCliente desconectou inesperadamente!\n");
+             close(targ->new_socket);
+            pthread_exit(0);
+        }
 
+        //send(targ->new_socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1><img src='download.png'></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1><img src='download.png'></body></html>"), 0);
+
+        write(targ->new_socket, hello, strlen(hello));
+        //*buffer = NULL;
+
+        //valread = read(targ->new_socket, buffer, 1024);
+
+        //send(targ->new_socket, "HTTP/1.0 200 OK\n\n", strlen("HTTP/1.0 200 OK\n\n"), 0);
         
+        //while(!feof(fp)){
+        //  ch = getc(fp);
+        //  send(targ->new_socket, ch, strlen(ch), 0);
+        //}
 
-        //mostraClientes();
-        send(targ->new_socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
-        //send(socket, "HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>", strlen("HTTP/1.0 200 OK\n\n<html><body><h1>Irio</h1><h1>testeaaa</h1></body></html>"), 0);
-     
-        close(targ->new_socket);
+        //printf("\nEnviou a imagem\n");
+
+        //close(targ->new_socket);
+        //pthread_exit(0);
 
         //status = close(socket);
-        pthread_exit(0);
+    }
+    close(targ->new_socket);
+    pthread_exit(0);
 }
