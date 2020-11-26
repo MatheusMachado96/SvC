@@ -187,7 +187,7 @@ void *handle_conection(void *p_client_socket)
             Ticks[1] = clock();
             printf("\nbytes enviados: %d", sent);
             double Tempo = (Ticks[1] - Ticks[0]) * 1000.0 / CLOCKS_PER_SEC;
-            printf("\nTempo gasto: %g s.", Tempo);
+            printf("\nTempo RTT gasto: %g s.", Tempo);
             //printf("\nVelocidade: %d KBps.", sent / Tempo);
             close(fp);
         }else{
