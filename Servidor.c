@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <time.h>
 
 #include <fcntl.h>
 #include <pthread.h> //biblioteca de threads em c
@@ -37,7 +38,7 @@ void mostraClientes()
     printf("|Endereço cliente|                          Velocidade de atendimento                          |\n");
     printf("+----------------+-----------------------------------------------------------------------------+\n");
     printf("|                |                                                                             |\n");
-    printf("|                |                                                                             |\n");
+    //printf("|                |                                                                             |\n");
     printf("+----------------------------------------------------------------------------------------------+\n");
 }
 
@@ -147,6 +148,7 @@ void *handle_conection(void *p_client_socket)
     char buffer[1024] = {0};
     ptr_thread_arg targ = (ptr_thread_arg)p_client_socket;
     FILE *fp;
+    clock_t Ticks[2];
     char ch;
     //char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
     char *hello = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 83\n\n<html><head><title>teste</title></head><body><img src='download.png'></body></html>";
@@ -180,8 +182,13 @@ void *handle_conection(void *p_client_socket)
             write(targ->new_socket, imageheader, sizeof(imageheader) - 1);
             // Send image content
             fp = open("download.png", O_RDONLY);
+            Ticks[0] = clock();
             int sent = sendfile(targ->new_socket, fp, NULL, 700000);
-            printf("sent: %d", sent);
+            Ticks[1] = clock();
+            printf("\nbytes enviados: %d", sent);
+            double Tempo = (Ticks[1] - Ticks[0]) * 1000.0 / CLOCKS_PER_SEC;
+            printf("\nTempo gasto: %g s.", Tempo);
+            //printf("\nVelocidade: %d KBps.", sent / Tempo);
             close(fp);
         }else{
 
