@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <time.h>
+#include <semaphore.h>
 
 #include <fcntl.h>
 #include <pthread.h> //biblioteca de threads em c
